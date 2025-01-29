@@ -25,7 +25,7 @@ def visualize_queues(times, active_states, rest_states):
     st.pyplot(fig)
 
 def main():
-    st.title("Truck Scheduling Simulation (Crew Management)")
+    st.title("Crew Management")
 
     # Input for the number of trucks
     num_trucks = st.slider("Number of Trucks", min_value=1, max_value=100, value=10)

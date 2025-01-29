@@ -4,3 +4,5 @@ streamlit
 numpy
 plotly
 geopy
+folium
+googlemaps
