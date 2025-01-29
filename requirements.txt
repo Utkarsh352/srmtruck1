@@ -2,4 +2,4 @@ matplotlib
 pandas
 streamlit
 numpy
-web3
+plotly
