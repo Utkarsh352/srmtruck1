@@ -53,27 +53,27 @@ ncr_location = (28.6139, 77.2090)  # Latitude, Longitude for New Delhi
 # Static weather data dictionary
 static_weather_data = {
     "Delhi": {
-        "temperature": 25,
+        "temperature": 18,
         "description": "Clear sky",
         "humidity": 60
     },
     "Mumbai": {
-        "temperature": 28,
+        "temperature": 22,
         "description": "Few clouds",
         "humidity": 80
     },
     "Bengaluru": {
-        "temperature": 22,
+        "temperature": 23,
         "description": "Light rain",
         "humidity": 85
     },
     "Kolkata": {
-        "temperature": 30,
+        "temperature": 21,
         "description": "Scattered clouds",
         "humidity": 70
     },
     "Chennai": {
-        "temperature": 32,
+        "temperature": 27,
         "description": "Sunny",
         "humidity": 65
     }
