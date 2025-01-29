@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import geopy.distance
 
 # Set up the page
 st.set_page_config(page_title="Inventory/Order Management", layout="wide")
-st.title("📦 Supply Chain Management Dashboard")
+st.title("📦 Inventory Management")
 
 # Styling
 st.markdown(
@@ -29,7 +30,7 @@ st.markdown(
         margin-bottom: 20px;
     }
     h1, h3 {
-        color: #333;
+        color: white;
     }
     .header {
         background-color: #f8f9fa;
@@ -46,17 +47,66 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Coordinates for NCR Region (Delhi)
+ncr_location = (28.6139, 77.2090)  # Latitude, Longitude for New Delhi
+
+# Static weather data dictionary
+static_weather_data = {
+    "Delhi": {
+        "temperature": 25,
+        "description": "Clear sky",
+        "humidity": 60
+    },
+    "Mumbai": {
+        "temperature": 28,
+        "description": "Few clouds",
+        "humidity": 80
+    },
+    "Bengaluru": {
+        "temperature": 22,
+        "description": "Light rain",
+        "humidity": 85
+    },
+    "Kolkata": {
+        "temperature": 30,
+        "description": "Scattered clouds",
+        "humidity": 70
+    },
+    "Chennai": {
+        "temperature": 32,
+        "description": "Sunny",
+        "humidity": 65
+    }
+}
+
+# Static Weather API function
+def get_weather(city):
+    # Return static weather information from the dictionary
+    if city in static_weather_data:
+        weather_info = static_weather_data[city]
+        return f"Weather in {city}: {weather_info['temperature']}°C, {weather_info['description']}, Humidity: {weather_info['humidity']}%"
+    else:
+        return "Weather data unavailable for this city."
+
+# Function to calculate distance between two cities
+def calculate_distance(lat1, lon1, lat2, lon2):
+    return geopy.distance.distance((lat1, lon1), (lat2, lon2)).km
+
 # Add a Navigation Sidebar
 with st.sidebar:
     st.header("Navigation")
     section = st.radio("Go to Section", options=["Create Item", "Transfer Ownership", "Update Item State", "View Item Details", "Inventory Overview"])
 
-# Add some dummy data for inventory overview
+# Add some dummy data for inventory overview with locations
 inventory_data = {
     "Item Name": ["Item A", "Item B", "Item C", "Item D", "Item E"],
     "Stock Level": [100, 150, 75, 120, 60],
     "State": ["Shipped", "Received", "Manufactured", "Delivered", "Created"],
+    "Location": ["Delhi", "Mumbai", "Bengaluru", "Kolkata", "Chennai"],  # Sample locations from different cities
+    "Latitude": [28.6139, 19.0760, 12.9716, 22.5726, 13.0827],  # Latitudes for locations in India
+    "Longitude": [77.2090, 72.8777, 77.5946, 88.3639, 80.2707],  # Longitudes for locations in India
 }
+
 df_inventory = pd.DataFrame(inventory_data)
 
 # Overview: Inventory Stock Chart
@@ -65,6 +115,67 @@ if section == "Inventory Overview":
     st.write("Stock levels of various items in the supply chain.")
     fig = px.bar(df_inventory, x="Item Name", y="Stock Level", color="State", title="Inventory Stock Overview")
     st.plotly_chart(fig)
+
+    # Map View of Stock Locations
+    st.markdown("### 🗺️ Stock Locations Map (India Only)")
+  
+    # Plot Map focused on India
+    fig_map = px.scatter_geo(
+        df_inventory,
+        lat='Latitude',
+        lon='Longitude',
+        hover_name='Item Name',
+        size='Stock Level',
+        template="plotly",
+        projection="mercator",  # Use Mercator projection for India
+        scope="asia",  # Focus the map on Asia (specifically India)
+        geojson=None,  # Remove geojson for custom regions
+    )
+    
+    # Add city labels to the map
+    fig_map.update_traces(marker=dict(symbol="circle"), selector=dict(mode='markers'))
+    fig_map.update_layout(
+        geo=dict(
+            projection_scale=5,
+            center={"lat": 20.5937, "lon": 78.9629},  # Center map on India
+            visible=True,
+            showland=True
+        ),
+        annotations=[dict(
+                x=df_inventory['Longitude'][i],
+                y=df_inventory['Latitude'][i],
+                text=df_inventory['Location'][i],
+                showarrow=True,
+                font=dict(size=12, color="black"),
+                arrowhead=2
+            ) for i in range(len(df_inventory))]
+    )
+    st.plotly_chart(fig_map)
+
+    # City selection for weather
+    city_name = st.selectbox("Select a City", df_inventory['Location'])
+    if city_name:
+        weather_info = get_weather(city_name)
+        st.markdown(f"### 🌤️ {weather_info}")
+
+    # City selection for distance calculation
+    city1 = st.selectbox("Select First City", df_inventory['Location'])
+    city2 = st.selectbox("Select Second City", df_inventory['Location'])
+    
+    if city1 and city2:
+        # Get lat, lon for both cities
+        city1_data = df_inventory[df_inventory['Location'] == city1].iloc[0]
+        city2_data = df_inventory[df_inventory['Location'] == city2].iloc[0]
+        
+        # Calculate distance
+        distance = calculate_distance(city1_data['Latitude'], city1_data['Longitude'], city2_data['Latitude'], city2_data['Longitude'])
+        
+        # Assume average speed to calculate time (this is a placeholder)
+        average_speed_kmh = 60  # km/h
+        time = distance / average_speed_kmh  # in hours
+        
+        st.markdown(f"### 🚗 Distance between {city1} and {city2}: {distance:.2f} km")
+        st.markdown(f"Estimated travel time (at {average_speed_kmh} km/h): {time:.2f} hours")
 
 # Create Item Section
 if section == "Create Item":
